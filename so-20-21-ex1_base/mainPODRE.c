@@ -37,16 +37,21 @@ void errorParse(){
 
 void processInput(FILE *inputfile){
     char line[MAX_INPUT_SIZE];
+    // NEW
+    int numTokens;
+    char token, type;
+    char name[MAX_INPUT_SIZE];
 
 
     // TODO: fgets + sscanf = fscanf ?????
 
     /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), inputfile)) { // reads line from inputfile
-        char token, type;
-        char name[MAX_INPUT_SIZE];
+    while ((numTokens = fscanf(inputfile, "%c %s %c", &token, name, &type))) { 
+    //while (fgets(line, sizeof(line)/sizeof(char), inputfile)) { // reads line from inputfile
+        //char token, type;
+        //char name[MAX_INPUT_SIZE];
 
-        int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
+        //int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
 
         /* perform minimal validation */
         if (numTokens < 1) {
