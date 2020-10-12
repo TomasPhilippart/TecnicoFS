@@ -138,6 +138,11 @@ void applyCommands(){
 
 int main(int argc, char* argv[]) {
     FILE *inputfile = fopen(argv[1], "r");
+    if (!inputfile) {
+        printf("Error opening file.");
+        exit(EXIT_FAILURE);
+    }
+
     /* init filesystem */
     init_fs();
 
