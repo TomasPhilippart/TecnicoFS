@@ -3,6 +3,8 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
+#include <pthread.h>
+#include <errno.h>
 #include "fs/operations.h"
 
 #define MAX_COMMANDS 150000
@@ -37,9 +39,6 @@ void errorParse(){
 
 void processInput(FILE *inputfile){
     char line[MAX_INPUT_SIZE];
-
-
-    // TODO: fgets + sscanf = fscanf ?????
 
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), inputfile)) { // reads line from inputfile
@@ -137,9 +136,11 @@ void applyCommands(){
 }
 
 int main(int argc, char* argv[]) {
+    /* possible arguments: inpufile outputfile numthreads synchstrategy */
+
     FILE *inputfile = fopen(argv[1], "r");
-    if (!inputfile) {
-        printf("Error opening file.");
+    if (!inputfile) { /* check for successful file opening */
+        perror("Error");
         exit(EXIT_FAILURE);
     }
 
@@ -148,9 +149,20 @@ int main(int argc, char* argv[]) {
 
     /* process input and print tree */
     processInput(inputfile);
-    applyCommands(); 
+    fclose(inputfile);
 
-    fclose(inputfile); //
+    numberThreads = atoi(argv[3]);
+    pthread_t tid[numberThreads];
+    /* create and assign thread pool to applyCommands */
+    for (int i = 0; i < numberThreads; i++) {
+        if (pthread_create(&tid[i], NULL, (void *) applyCommands, NULL) !=0) {
+            exit(EXIT_FAILURE);
+        } 
+    }
+
+    for (int i = 0; i < numberThreads; i++) {
+        pthread_join(tid[i], NULL);
+    }
 
     print_tecnicofs_tree(stdout);
 
