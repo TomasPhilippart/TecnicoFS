@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <time.h>
 #include "fs/operations.h"
 #include "fs/synch.h"
 
@@ -213,6 +214,7 @@ int main(int argc, char* argv[]) {
     /* initialize lok1 with desired synchstrategy*/
     init_lock(synch, &lock1); 
 
+    clock_t begin = clock();
 
     /* initialize lock2 with mutex/nosync only*/
     if (synch == 2) {
@@ -233,6 +235,8 @@ int main(int argc, char* argv[]) {
         } 
     }
 
+
+
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);
     }
@@ -242,13 +246,17 @@ int main(int argc, char* argv[]) {
     /* release allocated memory */
     destroy_fs();
     // FIXME - destroy_lock
-    destroy_lock(synch, lock1);
+    destroy_lock(synch, &lock1);
 
     if (synch == 2) {
-        destroy_lock(1, lock2);
+        destroy_lock(1, &lock2);
     } else {
-        destroy_lock(synch, lock2);
+        destroy_lock(synch, &lock2);
     }
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+    fprintf(stdout, "TecnicoFS completed in %.4f seconds.\n", time_spent);
 
     exit(EXIT_SUCCESS);
 }

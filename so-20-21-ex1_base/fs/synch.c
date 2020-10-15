@@ -48,15 +48,17 @@ void unlock(int synchstrategy, void *lock) {
         }
     }
 }
-void destroy_lock(int synchstrategy, void *lock) {
+void destroy_lock(int synchstrategy, void **lock) {
     if (synchstrategy == 0) { /* NOSYNC */
         /* do nothing */
     } else if (synchstrategy == 1) { /* MUTEX*/  
         if (pthread_mutex_destroy((pthread_mutex_t *)lock)) {
+            free(lock);
             exit(EXIT_FAILURE);
         }
     } else if (synchstrategy == 2) { /* RWLOCK */
         if (pthread_rwlock_destroy((pthread_rwlock_t *)lock)) {
+            free(lock);
             exit(EXIT_FAILURE);
         }
     }
