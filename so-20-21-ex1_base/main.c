@@ -177,20 +177,8 @@ void *applyCommands(){
     return NULL;
 }
 
-int main(int argc, char* argv[]) {
-
-    /* store possible arguments: inpufile outputfile numthreads synchstrategy */
-    FILE *inputfile = fopen(argv[1], "r");
-    FILE *outputfile = fopen(argv[2], "w+");
-    numberThreads = atoi(argv[3]);
-    char *synchstrategy = argv[4];
-    
-    if (!inputfile) { /* check for successful file opening */
-        perror("Error");
-        exit(EXIT_FAILURE);
-    }
-
-    /* determine synch strategy choice */
+/* auxiliary function that determines the synch strategy based on a string*/
+void setSynchStrategy(char *synchstrategy) {
     if (!strcmp(synchstrategy, "nosync")) {
         if (numberThreads == 1) {
             synch = NOSYNC;
@@ -208,16 +196,32 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Error: invalid synchstrategy\n");
         exit(EXIT_FAILURE);
     }
+}
 
+
+int main(int argc, char* argv[]) {
+
+    /* store possible arguments: inpufile outputfile numthreads synchstrategy */
+    FILE *inputfile = fopen(argv[1], "r");
+    FILE *outputfile = fopen(argv[2], "w+");
+    numberThreads = atoi(argv[3]);
+    char *synchstrategy = argv[4];
+    
+    if (!inputfile) { /* check for successful file opening */
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    setSynchStrategy(synchstrategy);
+    
     /* init filesystem */
     init_fs();
-
-    /* initialize lok1 with desired synchstrategy*/
-    init_lock(synch, &lock1); 
-
     clock_t begin = clock();
 
-    /* initialize lock2 with mutex/nosync only*/
+    /* initialize lock1 with desired synchstrategy*/
+    init_lock(synch, &lock1); 
+
+    /* initialize lock2 with mutex/nosync only (see removeCommands function) */
     if (synch == 2) {
         init_lock(1, &lock2);
     } else {
@@ -236,8 +240,6 @@ int main(int argc, char* argv[]) {
         } 
     }
 
-
-
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);
     }
@@ -247,14 +249,14 @@ int main(int argc, char* argv[]) {
 
     /* release allocated memory */
     destroy_fs();
-
+    
     destroy_lock(synch, &lock1);
-
     if (synch == 2) {
         destroy_lock(1, &lock2);
     } else {
         destroy_lock(synch, &lock2);
     }
+
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
