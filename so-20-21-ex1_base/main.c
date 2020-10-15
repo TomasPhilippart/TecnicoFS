@@ -181,6 +181,7 @@ int main(int argc, char* argv[]) {
 
     /* store possible arguments: inpufile outputfile numthreads synchstrategy */
     FILE *inputfile = fopen(argv[1], "r");
+    FILE *outputfile = fopen(argv[2], "w+");
     numberThreads = atoi(argv[3]);
     char *synchstrategy = argv[4];
     
@@ -241,7 +242,8 @@ int main(int argc, char* argv[]) {
         pthread_join(tid[i], NULL);
     }
 
-    print_tecnicofs_tree(stdout);
+    print_tecnicofs_tree(outputfile);
+    fclose(outputfile);
 
     /* release allocated memory */
     destroy_fs();
