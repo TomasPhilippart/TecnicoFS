@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
 
     /* release allocated memory */
     destroy_fs();
-    // FIXME - destroy_lock
+
     destroy_lock(synch, &lock1);
 
     if (synch == 2) {
