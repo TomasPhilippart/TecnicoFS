@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
+
+// Global mutex
+//pthread_mutex_t trinco = PTHREAD_MUTEX_INITIALIZER;
 
 /* Given a path, fills pointers with strings for the parent path and child
  * file name
