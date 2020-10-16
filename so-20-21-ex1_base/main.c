@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <time.h>
+#include <sys/time.h>
 #include "fs/operations.h"
 #include "fs/synch.h"
 
@@ -24,6 +24,7 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
+
 /* 0 -> NOSYNC, 1 -> MUTEX, 2 -> RWLOCK */
 int synch;
 
@@ -31,6 +32,7 @@ int synch;
 void *lock1;
 void *lock2; /* This lock is only intended to be used for removeCommands function*/
 
+struct timeval begin, end;
 
 int insertCommand(char* data) {
     if(numberCommands != MAX_COMMANDS) {
@@ -198,7 +200,6 @@ void setSynchStrategy(char *synchstrategy) {
     }
 }
 
-
 int main(int argc, char* argv[]) {
 
     /* store possible arguments: inpufile outputfile numthreads synchstrategy */
@@ -216,7 +217,7 @@ int main(int argc, char* argv[]) {
     
     /* init filesystem */
     init_fs();
-    clock_t begin = clock();
+    gettimeofday(&begin, NULL);
 
     /* initialize lock1 with desired synchstrategy*/
     init_lock(synch, &lock1); 
@@ -257,10 +258,11 @@ int main(int argc, char* argv[]) {
         destroy_lock(synch, &lock2);
     }
 
-    clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    gettimeofday(&end, NULL);
 
-    fprintf(stdout, "TecnicoFS completed in %.4f seconds.\n", time_spent);
+    printf ("TecnicoFS completed in %.4f seconds.\n",
+         (double) (end.tv_usec - begin.tv_usec) / 1000000 +
+         (double) (end.tv_sec - begin.tv_sec));
 
     exit(EXIT_SUCCESS);
 }
