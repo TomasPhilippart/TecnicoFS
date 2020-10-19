@@ -8,15 +8,9 @@
 #include <stdbool.h>
 #include <sys/time.h>
 #include "fs/operations.h"
-#include "fs/synch.h"
 
 #define MAX_COMMANDS 150000
 #define MAX_INPUT_SIZE 100
-
-/* Synch strategies*/
-#define NOSYNC 0
-#define MUTEX 1
-#define RWLOCK 2
 
 /* Global variables */
 int numberThreads = 0;
@@ -24,15 +18,6 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
-
-/* 0 -> NOSYNC, 1 -> MUTEX, 2 -> RWLOCK */
-int synch;
-
-/* Locks */
-void *lock1;
-void *lock2; /* This lock is only intended to be used for removeCommands function*/
-
-struct timeval begin, end;
 
 int insertCommand(char* data) {
     if(numberCommands != MAX_COMMANDS) {
@@ -43,19 +28,11 @@ int insertCommand(char* data) {
 }
 
 char* removeCommand() {
-    int synch2 = synch;
-    /* removeCommand can only be secured with NOSYNC or MUTEX locks*/
-    if (synch == 2) { /* if synchstrategy is RWLOCK, go with MUTEX instead*/
-        synch2 = 1;
-    }
 
-    lock(synch2, lock2, false); /* LOCK */
     if(numberCommands > 0){
         numberCommands--;
-        unlock(synch2, lock2); /* UNLOCK */
         return inputCommands[headQueue++];  
     }
-    unlock(synch2, lock2); /* UNLOCK */
     return NULL;
 }
 
@@ -130,20 +107,12 @@ void *applyCommands(){
             case 'c':
                 switch (type) {
                     case 'f':
-                        lock(synch, lock1, false);
-
                         printf("Create file: %s\n", name);
                         create(name, T_FILE);
-
-                        unlock(synch, lock1);
                         break;
                     case 'd':
-                        lock(synch, lock1, false);
-
                         printf("Create directory: %s\n", name);
                         create(name, T_DIRECTORY);
-
-                        unlock(synch, lock1);
                         break;
                     default:
                         fprintf(stderr, "Error: invalid node type\n");
@@ -151,23 +120,15 @@ void *applyCommands(){
                 }
                 break;
             case 'l': 
-                lock(synch, lock1, true);
-
                 searchResult = lookup(name);
                 if (searchResult >= 0)
                     printf("Search: %s found\n", name);
                 else
                     printf("Search: %s not found\n", name);
-
-                unlock(synch, lock1);
                 break;
             case 'd':
-                lock(synch, lock1, false);
-
                 printf("Delete: %s\n", name);
                 delete(name);
-
-                unlock(synch, lock1);
                 break;
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
@@ -179,56 +140,19 @@ void *applyCommands(){
     return NULL;
 }
 
-/* auxiliary function that determines the synch strategy based on a string*/
-void setSynchStrategy(char *synchstrategy) {
-    if (!strcmp(synchstrategy, "nosync")) {
-        if (numberThreads == 1) {
-            synch = NOSYNC;
-        } else {
-            fprintf(stderr, "Error: invalid synchstrategy and numthreads\n");
-            exit(EXIT_FAILURE);
-        }
-
-    } else if (!strcmp(synchstrategy, "mutex")) {
-        synch = MUTEX;
-
-    } else if (!strcmp(synchstrategy, "rwlock")) {
-        synch = RWLOCK;
-    } else {
-        fprintf(stderr, "Error: invalid synchstrategy\n");
-        exit(EXIT_FAILURE);
-    }
-}
 
 int main(int argc, char* argv[]) {
 
-    /* store possible arguments: inpufile outputfile numthreads synchstrategy */
+    /* store possible arguments: inpufile outputfile numthreads */
     FILE *inputfile = fopen(argv[1], "r");
     FILE *outputfile = fopen(argv[2], "w+");
     numberThreads = atoi(argv[3]);
-    char *synchstrategy = argv[4];
     
     if (!inputfile) { /* check for successful file opening */
         perror("Error");
         exit(EXIT_FAILURE);
     }
 
-    setSynchStrategy(synchstrategy);
-    
-    /* init filesystem */
-    init_fs();
-    gettimeofday(&begin, NULL);
-
-    /* initialize lock1 with desired synchstrategy*/
-    init_lock(synch, &lock1); 
-
-    /* initialize lock2 with mutex/nosync only (see removeCommands function) */
-    if (synch == 2) {
-        init_lock(1, &lock2);
-    } else {
-        init_lock(synch, &lock2); 
-    }
-        
     /* process input and print tree */
     processInput(inputfile);
     fclose(inputfile);
@@ -250,19 +174,6 @@ int main(int argc, char* argv[]) {
 
     /* release allocated memory */
     destroy_fs();
-    
-    destroy_lock(synch, &lock1);
-    if (synch == 2) {
-        destroy_lock(1, &lock2);
-    } else {
-        destroy_lock(synch, &lock2);
-    }
-
-    gettimeofday(&end, NULL);
-
-    printf ("TecnicoFS completed in %.4f seconds.\n",
-         (double) (end.tv_usec - begin.tv_usec) / 1000000 +
-         (double) (end.tv_sec - begin.tv_sec));
 
     exit(EXIT_SUCCESS);
 }
