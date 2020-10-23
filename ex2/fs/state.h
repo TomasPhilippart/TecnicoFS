@@ -40,7 +40,7 @@ union Data {
 typedef struct inode_t {    
 	type nodeType;
 	union Data data;
-    /* more i-node attributes will be added in future exercises */
+	pthread_rwlock_t lock;
 } inode_t;
 
 

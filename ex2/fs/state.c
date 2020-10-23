@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "state.h"
 #include "../tecnicofs-api-constants.h"
 
 inode_t inode_table[INODE_TABLE_SIZE];
-
 
 /*
  * Sleeps for synchronization testing.
@@ -14,7 +14,6 @@ inode_t inode_table[INODE_TABLE_SIZE];
 void insert_delay(int cycles) {
     for (int i = 0; i < cycles; i++) {}
 }
-
 
 /*
  * Initializes the i-nodes table.
@@ -36,9 +35,11 @@ void inode_table_destroy() {
         if (inode_table[i].nodeType != T_NONE) {
             /* as data is an union, the same pointer is used for both dirEntries and fileContents */
             /* just release one of them */
-	  if (inode_table[i].data.dirEntries)
+	    if (inode_table[i].data.dirEntries)
             free(inode_table[i].data.dirEntries);
         }
+
+        pthread_rwlock_destroy(&(inode_table[i].lock));
     }
 }
 
@@ -57,6 +58,9 @@ int inode_create(type nType) {
     for (int inumber = 0; inumber < INODE_TABLE_SIZE; inumber++) {
         if (inode_table[inumber].nodeType == T_NONE) {
             inode_table[inumber].nodeType = nType;
+
+            // init rwlock inside inode
+            pthread_rwlock_init(&(inode_table[inumber].lock), NULL);
 
             if (nType == T_DIRECTORY) {
                 /* Initializes entry table */
@@ -94,6 +98,9 @@ int inode_delete(int inumber) {
     /* see inode_table_destroy function */
     if (inode_table[inumber].data.dirEntries)
         free(inode_table[inumber].data.dirEntries);
+    
+    // REVIEW: do i need to destroy rwlocks when inode is deleted? 
+    //pthread_rwlock_destroy(&(inode_table[inumber].lock));
     return SUCCESS;
 }
 

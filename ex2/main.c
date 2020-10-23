@@ -136,13 +136,11 @@ void *applyCommands(){
             }
         }
     }
-    
     return NULL;
 }
 
 
 int main(int argc, char* argv[]) {
-
     /* store possible arguments: inpufile outputfile numthreads */
     FILE *inputfile = fopen(argv[1], "r");
     FILE *outputfile = fopen(argv[2], "w+");
