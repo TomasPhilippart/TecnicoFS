@@ -127,9 +127,12 @@ int create(char *name, type nodeType){
 
 	parent_inumber = lookup(parent_name);
 
+	inode_lock(parent_inumber, false); /* WRITE LOCK */
+
 	if (parent_inumber == FAIL) {
 		printf("failed to create %s, invalid parent dir %s\n",
 		        name, parent_name);
+		inode_unlock(parent_inumber); /* UNLOCK */
 		return FAIL;
 	}
 
@@ -138,29 +141,39 @@ int create(char *name, type nodeType){
 	if(pType != T_DIRECTORY) {
 		printf("failed to create %s, parent %s is not a dir\n",
 		        name, parent_name);
+		inode_unlock(parent_inumber); /* UNLOCK */
 		return FAIL;
 	}
 
 	if (lookup_sub_node(child_name, pdata.dirEntries) != FAIL) {
 		printf("failed to create %s, already exists in dir %s\n",
 		       child_name, parent_name);
+		inode_unlock(parent_inumber); /* UNLOCK */
 		return FAIL;
 	}
 
 	/* create node and add entry to folder that contains new node */
 	child_inumber = inode_create(nodeType);
+	inode_lock(child_inumber, false); /* WRITE LOCK */
+
 	if (child_inumber == FAIL) {
 		printf("failed to create %s in  %s, couldn't allocate inode\n",
 		        child_name, parent_name);
+		inode_unlock(parent_inumber); /* UNLOCK */
+		inode_unlock(child_inumber); /* UNLOCK */
 		return FAIL;
 	}
 
 	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
 		printf("could not add entry %s in dir %s\n",
 		       child_name, parent_name);
+		inode_unlock(parent_inumber); /* UNLOCK */
+		inode_unlock(child_inumber); /* UNLOCK */
 		return FAIL;
 	}
 
+	inode_unlock(parent_inumber); /* UNLOCK */
+	inode_unlock(child_inumber); /* UNLOCK */
 	return SUCCESS;
 }
 
@@ -243,6 +256,9 @@ int lookup(char *name) {
 	char full_path[MAX_FILE_NAME];
 	char delim[] = "/";
 
+	int inodes_visited[INODE_TABLE_SIZE]; /* stores inumbers for every inode visited during path traversal */
+	int num_inodes_visited = 0; /* number of inodes visited during path traversal */
+
 	strcpy(full_path, name);
 
 	/* start at root node */
@@ -254,13 +270,24 @@ int lookup(char *name) {
 
 	/* get root inode data */
 	inode_get(current_inumber, &nType, &data);
+	//inode_lock(FS_ROOT, true);
 
 	char *path = strtok(full_path, delim);
 
 	/* search for all sub nodes */
 	while (path != NULL && (current_inumber = lookup_sub_node(path, data.dirEntries)) != FAIL) {
+		// TODO: lock every node adquired during path traversal and subsequently unlock it after the lookup is done
+		//       -> store every inode index (current_inumber) in an array for posterior unlock	
+ 		inodes_visited[num_inodes_visited++] = current_inumber;
+		inode_lock(current_inumber, true); /* readlock every sub node, including the one we are looking for */
 		inode_get(current_inumber, &nType, &data);
 		path = strtok(NULL, delim);
+	}
+	
+	/*unlock all locked subnodes during traversal */
+	//inode_unlock(FS_ROOT); /* unlock root inode */
+	for (int i = 0; i < num_inodes_visited; i++) {
+		inode_unlock(inodes_visited[i]);
 	}
 
 	return current_inumber;

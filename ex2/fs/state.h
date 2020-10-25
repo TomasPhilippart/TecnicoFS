@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "../tecnicofs-api-constants.h"
 
 /* FS root inode number */
@@ -45,6 +46,10 @@ typedef struct inode_t {
 
 
 void insert_delay(int cycles);
+
+void inode_lock(int inumber, bool isReadlock);
+void inode_unlock(int inumber);
+
 void inode_table_init();
 void inode_table_destroy();
 int inode_create(type nType);

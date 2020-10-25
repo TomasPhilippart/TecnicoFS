@@ -18,6 +18,7 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
+struct timeval begin, end;
 
 int insertCommand(char* data) {
     if(numberCommands != MAX_COMMANDS) {
@@ -151,6 +152,10 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    /* init filesystem */
+    init_fs();
+    gettimeofday(&begin, NULL);
+
     /* process input and print tree */
     processInput(inputfile);
     fclose(inputfile);
@@ -172,6 +177,12 @@ int main(int argc, char* argv[]) {
 
     /* release allocated memory */
     destroy_fs();
+
+    gettimeofday(&end, NULL);
+
+    printf ("TecnicoFS completed in %.4f seconds.\n",
+         (double) (end.tv_usec - begin.tv_usec) / 1000000 +
+         (double) (end.tv_sec - begin.tv_sec));
 
     exit(EXIT_SUCCESS);
 }
