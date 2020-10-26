@@ -120,13 +120,22 @@ void *applyCommands(){
                         exit(EXIT_FAILURE);
                 }
                 break;
-            case 'l': 
-                searchResult = lookup(name);
+            case 'l':
+                { 
+                int inodes_visited[INODE_TABLE_SIZE];
+	            int num_inodes_visited = 0;
+                
+                searchResult = lookup(name, inodes_visited, &num_inodes_visited);
+                /*unlock all locked subnodes during traversal */
+	            for (int i = 0; i < num_inodes_visited; i++)
+		            inode_unlock(inodes_visited[i]);
+	            
                 if (searchResult >= 0)
                     printf("Search: %s found\n", name);
                 else
                     printf("Search: %s not found\n", name);
                 break;
+                }
             case 'd':
                 printf("Delete: %s\n", name);
                 delete(name);
