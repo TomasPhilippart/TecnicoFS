@@ -125,11 +125,9 @@ void *applyCommands(){
                 int inodes_visited[INODE_TABLE_SIZE];
 	            int num_inodes_visited = 0;
                 
-                searchResult = lookup(name, inodes_visited, &num_inodes_visited);
-                /*unlock all locked subnodes during traversal */
-	            for (int i = 0; i < num_inodes_visited; i++)
-		            inode_unlock(inodes_visited[i]);
-	            
+                searchResult = lookup(name, inodes_visited, &num_inodes_visited, READ);
+                unlock_inodes(inodes_visited, num_inodes_visited);
+
                 if (searchResult >= 0)
                     printf("Search: %s found\n", name);
                 else
@@ -151,6 +149,7 @@ void *applyCommands(){
 
 
 int main(int argc, char* argv[]) {
+
     /* store possible arguments: inpufile outputfile numthreads */
     FILE *inputfile = fopen(argv[1], "r");
     FILE *outputfile = fopen(argv[2], "w+");
@@ -163,8 +162,7 @@ int main(int argc, char* argv[]) {
 
     /* init filesystem */
     init_fs();
-    gettimeofday(&begin, NULL);
-
+    
     /* process input and print tree */
     processInput(inputfile);
     fclose(inputfile);
@@ -181,13 +179,14 @@ int main(int argc, char* argv[]) {
         pthread_join(tid[i], NULL);
     }
 
+    gettimeofday(&begin, NULL);
+    gettimeofday(&end, NULL);
+
     print_tecnicofs_tree(outputfile);
     fclose(outputfile);
 
     /* release allocated memory */
     destroy_fs();
-
-    gettimeofday(&end, NULL);
 
     printf ("TecnicoFS completed in %.4f seconds.\n",
          (double) (end.tv_usec - begin.tv_usec) / 1000000 +

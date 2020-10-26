@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <stdbool.h>
 #include "state.h"
 #include "../tecnicofs-api-constants.h"
 
@@ -16,17 +15,19 @@ void insert_delay(int cycles) {
     for (int i = 0; i < cycles; i++) {}
 }
 
-void inode_lock(int inumber, bool isReadlock ) {
+void inode_lock(int inumber, int mode) {
     if ((inumber < 0) || (inumber > INODE_TABLE_SIZE)) {
         fprintf(stderr, "inode_lock: invalid inumber\n");
         exit(EXIT_FAILURE);
     } 
 
-    if (isReadlock) {
+    if (mode) {
         pthread_rwlock_rdlock(&(inode_table[inumber].lock));
     } else {
         pthread_rwlock_wrlock(&(inode_table[inumber].lock));
     }
+
+    printf("Locked inumber %d with mode %d\n", inumber, mode);
 }
 
 void inode_unlock(int inumber) {
@@ -34,7 +35,10 @@ void inode_unlock(int inumber) {
         fprintf(stderr, "inode_unlock: invalid inumber\n");
         exit(EXIT_FAILURE);
     } 
+    
     pthread_rwlock_unlock(&(inode_table[inumber].lock));
+
+    printf("Unlocked inumber %d\n",inumber);
 }
 
 /*
