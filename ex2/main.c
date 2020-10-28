@@ -175,11 +175,13 @@ int main(int argc, char* argv[]) {
         } 
     }
 
+    gettimeofday(&begin, NULL);
+
+
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);
     }
 
-    gettimeofday(&begin, NULL);
     gettimeofday(&end, NULL);
 
     print_tecnicofs_tree(outputfile);

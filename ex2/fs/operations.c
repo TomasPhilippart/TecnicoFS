@@ -292,20 +292,27 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 	/* get root inode data */
 	inode_get(current_inumber, &nType, &data);
 	char *path = strtok_r(full_path, delim, &saveptr); 
+	if (path == NULL && !mode) { /* */
+		inode_lock(current_inumber, WRITE); /* writelock parent node */
+	} else {
+		inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
+	}
 
-	inode_lock(FS_ROOT, READ);
 	inodes_visited[(*num_inodes_visited)++] = current_inumber;
 
 	/* search for all sub nodes */
 	while (path != NULL && (current_inumber = lookup_sub_node(path, data.dirEntries)) != FAIL) {
  		inodes_visited[(*num_inodes_visited)++] = current_inumber;
-		inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
+		
 		inode_get(current_inumber, &nType, &data);
 		path = strtok_r(NULL, delim, &saveptr);
+		if (path == NULL && !mode) { /* */
+			inode_lock(current_inumber, WRITE); /* writelock parent node */
+		} else {
+			inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
+		}
 	}
 	
-	inode_unlock(current_inumber);
-	inode_lock(current_inumber, mode);
 	return current_inumber;
 }
 
