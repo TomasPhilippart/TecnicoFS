@@ -228,8 +228,6 @@ int delete(char *name){
 	}
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
-	inode_lock(child_inumber, WRITE);
-	inodes_visited[num_inodes_visited++] = child_inumber; /* add child_inumber to list of locked nodes*/
 	
 	if (child_inumber == FAIL) {
 		printf("could not delete %s, does not exist in dir %s\n",
@@ -237,7 +235,10 @@ int delete(char *name){
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
-
+	
+	inode_lock(child_inumber, WRITE);
+	inodes_visited[num_inodes_visited++] = child_inumber; /* add child_inumber to list of locked nodes*/
+	
 	inode_get(child_inumber, &cType, &cdata);
 
 	if (cType == T_DIRECTORY && is_dir_empty(cdata.dirEntries) == FAIL) {
@@ -292,7 +293,8 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 	/* get root inode data */
 	inode_get(current_inumber, &nType, &data);
 	char *path = strtok_r(full_path, delim, &saveptr); 
-	if (path == NULL && !mode) { /* */
+	/* WRITELOCK FS_ROOT IF PARENT, READLOCK OTHERWISE*/
+	if (path == NULL && !mode) { 
 		inode_lock(current_inumber, WRITE); /* writelock parent node */
 	} else {
 		inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
@@ -306,7 +308,7 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 		
 		inode_get(current_inumber, &nType, &data);
 		path = strtok_r(NULL, delim, &saveptr);
-		if (path == NULL && !mode) { /* */
+		if (path == NULL && !mode) { 
 			inode_lock(current_inumber, WRITE); /* writelock parent node */
 		} else {
 			inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */

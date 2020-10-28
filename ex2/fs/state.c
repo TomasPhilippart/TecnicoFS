@@ -15,6 +15,7 @@ void insert_delay(int cycles) {
     for (int i = 0; i < cycles; i++) {}
 }
 
+
 void inode_lock(int inumber, int mode) {
     if ((inumber < 0) || (inumber > INODE_TABLE_SIZE)) {
         fprintf(stderr, "inode_lock: invalid inumber\n");
