@@ -14,12 +14,17 @@
 
 /* Global variables */
 int numberThreads = 0;
-char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
+char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
+
+pthread_mutex_t commandsLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t empty, fill;
 
 struct timeval begin, end;
 
+/* ----------------------- */
+/*
 int insertCommand(char* data) {
     if(numberCommands != MAX_COMMANDS) {
         strcpy(inputCommands[numberCommands++], data);
@@ -28,11 +33,29 @@ int insertCommand(char* data) {
     return 0;
 }
 
-char* removeCommand() {
-
+char *removeCommand() {
     if(numberCommands > 0){
         numberCommands--;
         return inputCommands[headQueue++];  
+    }
+    return NULL;
+}
+*/
+
+/* REVIEW */
+int insertCommand(char* data) {
+    strcpy(inputCommands[numberCommands], data);
+    numberCommands = (numberCommands + 1) % MAX_COMMANDS; /* increment circularly*/
+    return 0;
+}
+
+/* REVIEW */
+char *removeCommand() {
+    char *tmp = inputCommands[headQueue];
+    if (numberCommands > 0) {
+        numberCommands--;
+        headQueue = (headQueue + 1) % MAX_COMMANDS; /* increment circularly*/
+        return tmp;
     }
     return NULL;
 }
@@ -40,6 +63,22 @@ char* removeCommand() {
 void errorParse(){
     fprintf(stderr, "Error: command invalid\n");
     exit(EXIT_FAILURE);
+}
+
+void protectCommand(char *line) {
+    pthread_mutex_lock(&commandsLock);
+    while (numberCommands == MAX_COMMANDS) {
+        pthread_cond_wait(&empty, &commandsLock);
+    }
+
+    if(insertCommand(line)) {
+        pthread_cond_signal(&fill);
+        pthread_mutex_unlock(&commandsLock);
+        return;
+    }
+
+    pthread_cond_signal(&fill);
+    pthread_mutex_unlock(&commandsLock);
 }
 
 void processInput(FILE *inputfile){
@@ -51,7 +90,7 @@ void processInput(FILE *inputfile){
         char name[MAX_INPUT_SIZE];
 
         int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
-
+    
         /* perform minimal validation */
         if (numTokens < 1) {
             continue;
@@ -60,22 +99,22 @@ void processInput(FILE *inputfile){
             case 'c':
                 if(numTokens != 3)
                     errorParse();
-                if(insertCommand(line))
-                    break;
+
+                protectCommand(line);
                 return;
             
             case 'l':
                 if(numTokens != 2)
                     errorParse();
-                if(insertCommand(line))
-                    break;
+
+                protectCommand(line);
                 return;
             
             case 'd':
                 if(numTokens != 2)
                     errorParse();
-                if(insertCommand(line))
-                    break;
+
+                protectCommand(line);
                 return;
             
             case '#':
@@ -89,8 +128,17 @@ void processInput(FILE *inputfile){
 }
 
 void *applyCommands(){
-    while (numberCommands > 0){
+    while (numberCommands > 0) {
+
+        pthread_mutex_lock(&commandsLock);
+        while (numberCommands == 0) {
+            pthread_cond_wait(&fill, &commandsLock);
+        }
+
         const char* command = removeCommand();
+        pthread_cond_signal(&empty);
+        pthread_mutex_unlock(&commandsLock);
+
         if (command == NULL){
             continue;
         }
@@ -105,7 +153,7 @@ void *applyCommands(){
 
         int searchResult;
         switch (token) {
-            case 'c':
+            case 'c': /* CREATE */
                 switch (type) {
                     case 'f':
                         printf("Create file: %s\n", name);
@@ -120,8 +168,8 @@ void *applyCommands(){
                         exit(EXIT_FAILURE);
                 }
                 break;
-            case 'l':
-                { 
+            case 'l': /* LOOKUP */
+                {  
                 int inodes_visited[INODE_TABLE_SIZE];
 	            int num_inodes_visited = 0;
                 
@@ -134,7 +182,7 @@ void *applyCommands(){
                     printf("Search: %s not found\n", name);
                 break;
                 }
-            case 'd':
+            case 'd': /* DELETE */
                 printf("Delete: %s\n", name);
                 delete(name);
                 break;
@@ -165,6 +213,7 @@ int main(int argc, char* argv[]) {
     
     /* process input and print tree */
     processInput(inputfile);
+    gettimeofday(&begin, NULL);
     fclose(inputfile);
     
     pthread_t tid[numberThreads];
@@ -174,9 +223,6 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         } 
     }
-
-    gettimeofday(&begin, NULL);
-
 
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);
