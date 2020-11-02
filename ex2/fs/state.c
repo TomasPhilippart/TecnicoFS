@@ -82,8 +82,12 @@ int inode_create(type nType) {
     /* Used for testing synchronization speedup */
     insert_delay(DELAY);
 
+    // lock_read
     for (int inumber = 0; inumber < INODE_TABLE_SIZE; inumber++) {
         if (inode_table[inumber].nodeType == T_NONE) {
+
+            // unlock 
+            // lock_write -> check if inode type has not been changed
             inode_table[inumber].nodeType = nType;
 
             // init rwlock inside inode
