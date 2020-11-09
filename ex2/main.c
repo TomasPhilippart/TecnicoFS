@@ -16,6 +16,7 @@
 int numberThreads = 0;
 int numberCommands = 0;
 int headQueue = 0;
+int insertIndex = 0;
 char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 
 pthread_mutex_t commandsLock;
@@ -26,16 +27,15 @@ struct timeval begin, end;
 /* ========================================================= */
 
 void insertCommand(char* data) {
-    strcpy(inputCommands[numberCommands], data);
-    numberCommands = (numberCommands + 1) % MAX_COMMANDS; /* increment circularly*/
-    printf("numberCommands: %d\n", numberCommands);
+    strcpy(inputCommands[insertIndex], data);
+    numberCommands++;
+    insertIndex = (insertIndex + 1) % MAX_COMMANDS; /* increment circularly */
 }
 
-/* REVIEW: qq coisa esquisita aqui */
 char *removeCommand() {
     char *tmp = inputCommands[headQueue];
     if (numberCommands > 0) {
-        numberCommands = (numberCommands - 1) % MAX_COMMANDS;
+        numberCommands--;
         headQueue = (headQueue + 1) % MAX_COMMANDS; /* increment circularly*/
         return tmp;
     }
@@ -57,6 +57,7 @@ void insertProtectedCommand(char *line) {
     pthread_cond_signal(&fill);
     pthread_mutex_unlock(&commandsLock);
 }
+
 /* function inserts N shutdown commands, where N is the number of threads*/
 void shutdown() {
     for (int i = 0; i < numberThreads; i++) {
@@ -120,16 +121,20 @@ void *applyCommands() {
         }
 
         const char* command = removeCommand();
-        pthread_cond_signal(&empty);
-        pthread_mutex_unlock(&commandsLock);
-
-        if (command == NULL){
+        
+        if (command == NULL) {
+            pthread_cond_signal(&empty);
+            pthread_mutex_unlock(&commandsLock);
             continue;
         }
 
         char token, type;
         char name[MAX_INPUT_SIZE];
         int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+
+        pthread_cond_signal(&empty);
+        pthread_mutex_unlock(&commandsLock);
+
         if (numTokens < 2) {
             fprintf(stderr, "Error: invalid command in Queue\n");
             exit(EXIT_FAILURE);
@@ -174,7 +179,6 @@ void *applyCommands() {
                 break;
 
             case 's': /* SHUTDOWN */
-                printf("shutting down\n");
                 return NULL;
 
             default: { /* error */
@@ -202,9 +206,7 @@ int main(int argc, char* argv[]) {
     init_fs();
     
     /* process input and print tree */
-    processInput(inputfile);
     gettimeofday(&begin, NULL);
-    fclose(inputfile);
 
     pthread_mutex_init(&commandsLock, NULL);
 
@@ -215,6 +217,9 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         } 
     }
+
+    processInput(inputfile);
+    fclose(inputfile);
 
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);

@@ -28,7 +28,6 @@ void inode_lock(int inumber, int mode) {
         pthread_rwlock_wrlock(&(inode_table[inumber].lock));
     }
 
-    printf("Locked inumber %d with mode %d\n", inumber, mode);
 }
 
 void inode_unlock(int inumber) {
@@ -38,8 +37,6 @@ void inode_unlock(int inumber) {
     } 
     
     pthread_rwlock_unlock(&(inode_table[inumber].lock));
-
-    printf("Unlocked inumber %d\n",inumber);
 }
 
 /*

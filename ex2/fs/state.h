@@ -15,7 +15,7 @@
 #define SUCCESS 0
 #define FAIL -1
 
-#define DELAY 50000000
+#define DELAY 5000000
 
 
 /*
