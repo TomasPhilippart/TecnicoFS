@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include "fs/operations.h"
 
-#define MAX_COMMANDS 150000
+#define MAX_COMMANDS 10
 #define MAX_INPUT_SIZE 100
 
 /* Global variables */
@@ -18,42 +18,24 @@ int numberCommands = 0;
 int headQueue = 0;
 char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 
-pthread_mutex_t commandsLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t commandsLock;
 pthread_cond_t empty, fill;
 
 struct timeval begin, end;
 
-/* ----------------------- */
-/*
-int insertCommand(char* data) {
-    if(numberCommands != MAX_COMMANDS) {
-        strcpy(inputCommands[numberCommands++], data);
-        return 1;
-    }
-    return 0;
-}
+/* ========================================================= */
 
-char *removeCommand() {
-    if(numberCommands > 0){
-        numberCommands--;
-        return inputCommands[headQueue++];  
-    }
-    return NULL;
-}
-*/
-
-/* REVIEW */
-int insertCommand(char* data) {
+void insertCommand(char* data) {
     strcpy(inputCommands[numberCommands], data);
     numberCommands = (numberCommands + 1) % MAX_COMMANDS; /* increment circularly*/
-    return 0;
+    printf("numberCommands: %d\n", numberCommands);
 }
 
-/* REVIEW */
+/* REVIEW: qq coisa esquisita aqui */
 char *removeCommand() {
     char *tmp = inputCommands[headQueue];
     if (numberCommands > 0) {
-        numberCommands--;
+        numberCommands = (numberCommands - 1) % MAX_COMMANDS;
         headQueue = (headQueue + 1) % MAX_COMMANDS; /* increment circularly*/
         return tmp;
     }
@@ -65,20 +47,21 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-void protectCommand(char *line) {
+void insertProtectedCommand(char *line) {
     pthread_mutex_lock(&commandsLock);
     while (numberCommands == MAX_COMMANDS) {
         pthread_cond_wait(&empty, &commandsLock);
     }
 
-    if(insertCommand(line)) {
-        pthread_cond_signal(&fill);
-        pthread_mutex_unlock(&commandsLock);
-        return;
-    }
-
+    insertCommand(line);
     pthread_cond_signal(&fill);
     pthread_mutex_unlock(&commandsLock);
+}
+/* function inserts N shutdown commands, where N is the number of threads*/
+void shutdown() {
+    for (int i = 0; i < numberThreads; i++) {
+        insertProtectedCommand("s X X"); // s command signals shutdown
+    }
 }
 
 void processInput(FILE *inputfile){
@@ -90,33 +73,32 @@ void processInput(FILE *inputfile){
         char name[MAX_INPUT_SIZE];
 
         int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
-    
         /* perform minimal validation */
         if (numTokens < 1) {
             continue;
         }
         switch (token) {
             case 'c':
-                if(numTokens != 3)
+                if(numTokens != 3) 
                     errorParse();
 
-                protectCommand(line);
-                return;
-            
+                insertProtectedCommand(line);
+                break;
+    
             case 'l':
                 if(numTokens != 2)
                     errorParse();
 
-                protectCommand(line);
-                return;
-            
+                insertProtectedCommand(line);
+                break;
+
             case 'd':
                 if(numTokens != 2)
                     errorParse();
 
-                protectCommand(line);
-                return;
-            
+                insertProtectedCommand(line);
+                break;
+
             case '#':
                 break;
             
@@ -124,12 +106,14 @@ void processInput(FILE *inputfile){
                 errorParse();
             }
         }
+        
     }
+    // marks end of commands to process
+    shutdown();
 }
 
-void *applyCommands(){
-    while (numberCommands > 0) {
-
+void *applyCommands() {
+    while (1) {
         pthread_mutex_lock(&commandsLock);
         while (numberCommands == 0) {
             pthread_cond_wait(&fill, &commandsLock);
@@ -168,6 +152,7 @@ void *applyCommands(){
                         exit(EXIT_FAILURE);
                 }
                 break;
+
             case 'l': /* LOOKUP */
                 {  
                 int inodes_visited[INODE_TABLE_SIZE];
@@ -182,10 +167,16 @@ void *applyCommands(){
                     printf("Search: %s not found\n", name);
                 break;
                 }
+
             case 'd': /* DELETE */
                 printf("Delete: %s\n", name);
                 delete(name);
                 break;
+
+            case 's': /* SHUTDOWN */
+                printf("shutting down\n");
+                return NULL;
+
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
@@ -197,7 +188,6 @@ void *applyCommands(){
 
 
 int main(int argc, char* argv[]) {
-
     /* store possible arguments: inpufile outputfile numthreads */
     FILE *inputfile = fopen(argv[1], "r");
     FILE *outputfile = fopen(argv[2], "w+");
@@ -215,7 +205,9 @@ int main(int argc, char* argv[]) {
     processInput(inputfile);
     gettimeofday(&begin, NULL);
     fclose(inputfile);
-    
+
+    pthread_mutex_init(&commandsLock, NULL);
+
     pthread_t tid[numberThreads];
     /* create and assign thread pool to applyCommands */
     for (int i = 0; i < numberThreads; i++) {
