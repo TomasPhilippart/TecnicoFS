@@ -267,7 +267,14 @@ int delete(char *name){
 	return SUCCESS;
 }
 
-move(char *path, char *newPath) {
+/*
+ * Moves a file/directory from path to newPath.
+ * Input:
+ *  - path: path of node
+ *  - newPath: new path of node (after move)
+ * Returns: SUCCESS or FAIL
+ */
+int move(char *path, char *newPath) {
 	// TODO
 }
 

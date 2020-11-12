@@ -140,7 +140,7 @@ void *applyCommands() {
 
         char token, type;
         char name[MAX_INPUT_SIZE], secondArgument[MAX_INPUT_SIZE];
-        
+
         int numTokens = sscanf(command, "%c %s %s", &token, name, secondArgument);
         type = (char) secondArgument[0];
 
@@ -193,6 +193,7 @@ void *applyCommands() {
             case 'm': /* MOVE */
                 printf("Move: %s %s\n", name, secondArgument);
                 move(name, secondArgument);
+                break;
 
             case 's': /* SHUTDOWN */
                 return NULL;
