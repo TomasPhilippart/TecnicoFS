@@ -70,19 +70,11 @@ void processInput(FILE *inputfile){
 
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), inputfile)) { // reads line from inputfile
-        char token, type;
+        char token;
         char name[MAX_INPUT_SIZE];
-        char newPath[MAX_INPUT_SIZE];
-
-        int numTokens;
-        sscanf(line, "%c", &token);
-        if (token == 'm') {
-            numTokens = sscanf(line, "%c %s %s", &token, name, newPath);
-        } else {
-            numTokens = sscanf(line, "%c %s %c", &token, name, &type);
-        }
+        char secondArgument[MAX_INPUT_SIZE];
  
-        //int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
+        int numTokens = sscanf(line, "%c %s %s", &token, name, secondArgument);
 
         /* perform minimal validation */
         if (numTokens < 1) {
@@ -115,7 +107,7 @@ void processInput(FILE *inputfile){
                 if (numTokens != 3) 
                     errorParse();
                 
-                move(name, newPath);
+                insertProtectedCommand(line);
                 break;
 
             case '#':
@@ -147,8 +139,10 @@ void *applyCommands() {
         }
 
         char token, type;
-        char name[MAX_INPUT_SIZE];
-        int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+        char name[MAX_INPUT_SIZE], secondArgument[MAX_INPUT_SIZE];
+        
+        int numTokens = sscanf(command, "%c %s %s", &token, name, secondArgument);
+        type = (char) secondArgument[0];
 
         pthread_cond_signal(&empty);
         pthread_mutex_unlock(&commandsLock);
@@ -195,6 +189,10 @@ void *applyCommands() {
                 printf("Delete: %s\n", name);
                 delete(name);
                 break;
+            
+            case 'm': /* MOVE */
+                printf("Move: %s %s\n", name, secondArgument);
+                move(name, secondArgument);
 
             case 's': /* SHUTDOWN */
                 return NULL;
