@@ -267,6 +267,9 @@ int delete(char *name){
 	return SUCCESS;
 }
 
+move(char *path, char *newPath) {
+	// TODO
+}
 
 /*
  * Lookup for a given path.

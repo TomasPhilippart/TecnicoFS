@@ -72,12 +72,23 @@ void processInput(FILE *inputfile){
     while (fgets(line, sizeof(line)/sizeof(char), inputfile)) { // reads line from inputfile
         char token, type;
         char name[MAX_INPUT_SIZE];
+        char newPath[MAX_INPUT_SIZE];
 
-        int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
+        int numTokens = 0;
+        numTokens += sscanf(line, "%c", &token);
+        if (token == 'm') {
+            numTokens += sscanf(line, "%s %s", name, newPath);
+        } else {
+            numTokens += sscanf(line, "%s %c", name, &type);
+        }
+
+        //int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
+
         /* perform minimal validation */
         if (numTokens < 1) {
             continue;
         }
+
         switch (token) {
             case 'c':
                 if(numTokens != 3) 
@@ -98,6 +109,13 @@ void processInput(FILE *inputfile){
                     errorParse();
 
                 insertProtectedCommand(line);
+                break;
+
+            case 'm':
+                if (numTokens != 3) 
+                    errorParse();
+                
+                move(name, newPath);
                 break;
 
             case '#':
