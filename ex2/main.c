@@ -74,14 +74,14 @@ void processInput(FILE *inputfile){
         char name[MAX_INPUT_SIZE];
         char newPath[MAX_INPUT_SIZE];
 
-        int numTokens = 0;
-        numTokens += sscanf(line, "%c", &token);
+        int numTokens;
+        sscanf(line, "%c", &token);
         if (token == 'm') {
-            numTokens += sscanf(line, "%s %s", name, newPath);
+            numTokens = sscanf(line, "%c %s %s", &token, name, newPath);
         } else {
-            numTokens += sscanf(line, "%s %c", name, &type);
+            numTokens = sscanf(line, "%c %s %c", &token, name, &type);
         }
-
+ 
         //int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
 
         /* perform minimal validation */
