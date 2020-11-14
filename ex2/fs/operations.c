@@ -291,7 +291,7 @@ int move(char *path, char *newPath) {
 	split_parent_child_from_path(name_copy, &parent_name, &child_name);
 
 	// verifies a file/dir exists in path
-	parent_inumber = lookup(path, inodes_visited, &num_inodes_visited, WRITE);
+	parent_inumber = lookup(parent_name, inodes_visited, &num_inodes_visited, WRITE);
 	if (parent_inumber == FAIL) {
 		fprintf(stderr, "failed to move %s, invalid parent dir %s\n", child_name, parent_name);
 		unlock_inodes(inodes_visited, num_inodes_visited);
@@ -329,7 +329,6 @@ int move(char *path, char *newPath) {
 	inode_lock(child_inumber, WRITE);
 	inodes_visited[num_inodes_visited++] = child_inumber; /* add child_inumber to list of locked nodes*/
 	
-
 	/* add entry to folder that contains moved node */
 	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
 		printf("could not move entry %s in dir %s\n", child_name, parent_name);
