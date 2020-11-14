@@ -149,6 +149,7 @@ int create(char *name, type nodeType){
 
 	inode_get(parent_inumber, &pType, &pdata);
 
+
 	if(pType != T_DIRECTORY) {
 		printf("failed to create %s, parent %s is not a dir\n",
 		        name, parent_name);
@@ -275,8 +276,78 @@ int delete(char *name){
  * Returns: SUCCESS or FAIL
  */
 int move(char *path, char *newPath) {
-	// TODO
+
+	int parent_inumber, child_inumber;
+	char *parent_name, *new_parent_name, *child_name, *new_child_name, name_copy[MAX_FILE_NAME];
+
+	int inodes_visited[INODE_TABLE_SIZE];
+	int num_inodes_visited = 0;
+
+	/* use for copy */
+	type pType, cType;
+	union Data pdata, cdata;
+
+	strcpy(name_copy, path);
+	split_parent_child_from_path(name_copy, &parent_name, &child_name);
+
+	// verifies a file/dir exists in path
+	parent_inumber = lookup(path, inodes_visited, &num_inodes_visited, WRITE);
+	if (parent_inumber == FAIL) {
+		fprintf(stderr, "failed to move %s, invalid parent dir %s\n", child_name, parent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	inode_get(parent_inumber, &pType, &pdata);
+
+	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
+	if (child_inumber == FAIL) {
+		fprintf(stderr, "could not move %s, does not exist in dir %s\n", child_name, parent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	// verifies no file/dir exists in new path
+	strcpy(name_copy, newPath);
+	split_parent_child_from_path(name_copy, &new_parent_name, &new_child_name);
+
+	int new_parent_inumber = lookup(path, inodes_visited, &num_inodes_visited, WRITE);
+	if (new_parent_inumber == FAIL) {
+		fprintf(stderr, "failed to move %s, no parent dir %s exists\n", child_name, new_parent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	inode_get(new_parent_inumber, &cType, &cdata);
+
+	if (lookup_sub_node(child_name, pdata.dirEntries) != FAIL) {
+		printf("failed to create %s, already exists in dir %s\n", child_name, new_parent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	inode_lock(child_inumber, WRITE);
+	inodes_visited[num_inodes_visited++] = child_inumber; /* add child_inumber to list of locked nodes*/
+	
+
+	/* add entry to folder that contains moved node */
+	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
+		printf("could not move entry %s in dir %s\n", child_name, parent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	/* remove entry from folder that contained moved node */
+	if (dir_reset_entry(parent_inumber, child_inumber) == FAIL) {
+		fprintf(stderr, "failed to move %s from dir %s\n", child_name, parent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	unlock_inodes(inodes_visited, num_inodes_visited);	
+	return SUCCESS;
 }
+
 
 /*
  * Lookup for a given path.
@@ -303,8 +374,9 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 	/* get root inode data */
 	inode_get(current_inumber, &nType, &data);
 	char *path = strtok_r(full_path, delim, &saveptr); 
+
 	/* WRITELOCK FS_ROOT IF PARENT, READLOCK OTHERWISE*/
-	if (path == NULL && !mode) { 
+	if (path == NULL && mode == WRITE) { 
 		inode_lock(current_inumber, WRITE); /* writelock parent node */
 	} else {
 		inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
@@ -318,7 +390,7 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 		
 		inode_get(current_inumber, &nType, &data);
 		path = strtok_r(NULL, delim, &saveptr);
-		if (path == NULL && !mode) { 
+		if (path == NULL && mode == WRITE) { 
 			inode_lock(current_inumber, WRITE); /* writelock parent node */
 		} else {
 			inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */

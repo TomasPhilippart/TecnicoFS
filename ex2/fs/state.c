@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
 #include "state.h"
 #include "../tecnicofs-api-constants.h"
 
@@ -47,6 +48,8 @@ void inode_table_init() {
         inode_table[i].nodeType = T_NONE;
         inode_table[i].data.dirEntries = NULL;
         inode_table[i].data.fileContents = NULL;
+        // init rwlock inside inode
+        pthread_rwlock_init(&(inode_table[i].lock), NULL);
     }
 }
 
@@ -79,29 +82,36 @@ int inode_create(type nType) {
     /* Used for testing synchronization speedup */
     insert_delay(DELAY);
 
-    // lock_read
+    int lockStatus;
+
     for (int inumber = 0; inumber < INODE_TABLE_SIZE; inumber++) {
-        if (inode_table[inumber].nodeType == T_NONE) {
+        lockStatus = pthread_rwlock_trywrlock(&(inode_table[inumber].lock));
+        if (lockStatus == 0) {
+            if (inode_table[inumber].nodeType == T_NONE) {
 
-            // unlock 
-            // lock_write -> check if inode type has not been changed
-            inode_table[inumber].nodeType = nType;
+                inode_table[inumber].nodeType = nType;
 
-            // init rwlock inside inode
-            pthread_rwlock_init(&(inode_table[inumber].lock), NULL);
-
-            if (nType == T_DIRECTORY) {
-                /* Initializes entry table */
-                inode_table[inumber].data.dirEntries = malloc(sizeof(DirEntry) * MAX_DIR_ENTRIES);
-                
-                for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
-                    inode_table[inumber].data.dirEntries[i].inumber = FREE_INODE;
+                if (nType == T_DIRECTORY) {
+                    /* Initializes entry table */
+                    inode_table[inumber].data.dirEntries = malloc(sizeof(DirEntry) * MAX_DIR_ENTRIES);
+                    
+                    for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
+                        inode_table[inumber].data.dirEntries[i].inumber = FREE_INODE;
+                    }
                 }
+                else {
+                    inode_table[inumber].data.fileContents = NULL;
+                }
+                
+                pthread_rwlock_unlock(&(inode_table[inumber].lock));
+                return inumber;
             }
-            else {
-                inode_table[inumber].data.fileContents = NULL;
-            }
-            return inumber;
+
+            pthread_rwlock_unlock(&(inode_table[inumber].lock));
+
+        } else if (lockStatus != EBUSY) {
+            fprintf(stderr, "lock failed on inumber %d\n", inumber);
+            exit(EXIT_FAILURE);
         }
     }
     return FAIL;
@@ -126,9 +136,7 @@ int inode_delete(int inumber) {
     /* see inode_table_destroy function */
     if (inode_table[inumber].data.dirEntries)
         free(inode_table[inumber].data.dirEntries);
-    
-    // REVIEW: do i need to destroy rwlocks when inode is deleted? 
-    //pthread_rwlock_destroy(&(inode_table[inumber].lock));
+
     return SUCCESS;
 }
 

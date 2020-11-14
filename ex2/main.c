@@ -220,10 +220,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* init filesystem */
-    init_fs();
-    
-    /* process input and print tree */
-    gettimeofday(&begin, NULL);
+    init_fs();    
 
     pthread_mutex_init(&commandsLock, NULL);
 
@@ -235,6 +232,7 @@ int main(int argc, char* argv[]) {
         } 
     }
 
+    gettimeofday(&begin, NULL);
     processInput(inputfile);
     fclose(inputfile);
 
