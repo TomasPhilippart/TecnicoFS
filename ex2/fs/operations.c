@@ -277,77 +277,67 @@ int delete(char *name){
  */
 int move(char *path, char *newPath) {
 
-	int parent_inumber, child_inumber;
-	char *parent_name, *new_parent_name, *child_name, *new_child_name, name_copy[MAX_FILE_NAME];
-
+	int parent_inumber, child_inumber, newParent_inumber;
 	int inodes_visited[INODE_TABLE_SIZE];
+	char *parent_name, *newParent_name, *child_name, *newChild_name, name_copy[MAX_FILE_NAME], newName_copy[MAX_FILE_NAME];
 	int num_inodes_visited = 0;
 
-	/* use for copy */
 	type pType, cType;
-	union Data pdata, cdata;
+	union Data pdata, cdata, pnewData;
 
 	strcpy(name_copy, path);
+	strcpy(newName_copy, newPath);
 	split_parent_child_from_path(name_copy, &parent_name, &child_name);
+	split_parent_child_from_path(newName_copy, &newParent_name, &newChild_name);
 
-	// verifies a file/dir exists in path
 	parent_inumber = lookup(parent_name, inodes_visited, &num_inodes_visited, WRITE);
+	newParent_inumber = lookup(newParent_name, inodes_visited, &num_inodes_visited, WRITE);
+
 	if (parent_inumber == FAIL) {
-		fprintf(stderr, "failed to move %s, invalid parent dir %s\n", child_name, parent_name);
+		fprintf(stderr, "Move: path %s does not exist\n", path);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	if (newParent_inumber == FAIL) {
+		fprintf(stderr, "Move: newPath %s does not exist\n", newPath);
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
 
 	inode_get(parent_inumber, &pType, &pdata);
+	inode_get(newParent_inumber,&pType,&pnewData);
+
+	if (lookup_sub_node(child_name, pnewData.dirEntries) != FAIL) {
+		fprintf(stderr, "Move: %s already exists in %s\n", child_name, newParent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
-	if (child_inumber == FAIL) {
-		fprintf(stderr, "could not move %s, does not exist in dir %s\n", child_name, parent_name);
+	inode_get(child_inumber, &cType, &cdata);
+
+	if (cType == T_DIRECTORY && is_dir_empty(cdata.dirEntries) == FAIL) {
+		fprintf(stderr, "Move: %s is a directory and not empty\n", path);
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
 
-	// verifies no file/dir exists in new path
-	strcpy(name_copy, newPath);
-	split_parent_child_from_path(name_copy, &new_parent_name, &new_child_name);
-
-	int new_parent_inumber = lookup(path, inodes_visited, &num_inodes_visited, WRITE);
-	if (new_parent_inumber == FAIL) {
-		fprintf(stderr, "failed to move %s, no parent dir %s exists\n", child_name, new_parent_name);
-		unlock_inodes(inodes_visited, num_inodes_visited);
-		return FAIL;
-	}
-
-	inode_get(new_parent_inumber, &cType, &cdata);
-
-	if (lookup_sub_node(child_name, pdata.dirEntries) != FAIL) {
-		printf("failed to create %s, already exists in dir %s\n", child_name, new_parent_name);
-		unlock_inodes(inodes_visited, num_inodes_visited);
-		return FAIL;
-	}
-
-	inode_lock(child_inumber, WRITE);
-	inodes_visited[num_inodes_visited++] = child_inumber; /* add child_inumber to list of locked nodes*/
-	
-	/* add entry to folder that contains moved node */
-	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
-		printf("could not move entry %s in dir %s\n", child_name, parent_name);
-		unlock_inodes(inodes_visited, num_inodes_visited);
-		return FAIL;
-	}
-
-	/* remove entry from folder that contained moved node */
 	if (dir_reset_entry(parent_inumber, child_inumber) == FAIL) {
-		fprintf(stderr, "failed to move %s from dir %s\n", child_name, parent_name);
+		fprintf(stderr, "Move: failed to delete %s from dir %s\n", child_name, parent_name);
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
 
-	unlock_inodes(inodes_visited, num_inodes_visited);	
+	if (dir_add_entry(newParent_inumber, child_inumber, newChild_name) == FAIL) {
+		fprintf(stderr, "Move: could not add entry %s in dir %s\n", child_name, newParent_name);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	unlock_inodes(inodes_visited, num_inodes_visited);
 	return SUCCESS;
 }
-
-
 /*
  * Lookup for a given path.
  * Input:

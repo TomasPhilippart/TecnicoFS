@@ -24,9 +24,16 @@ void inode_lock(int inumber, int mode) {
     } 
 
     if (mode) {
-        pthread_rwlock_rdlock(&(inode_table[inumber].lock));
+        if(pthread_rwlock_rdlock(&(inode_table[inumber].lock))) {
+            fprintf(stderr, "inode_lock: error locking\n");
+            exit(EXIT_FAILURE);
+        }
+
     } else {
-        pthread_rwlock_wrlock(&(inode_table[inumber].lock));
+        if(pthread_rwlock_wrlock(&(inode_table[inumber].lock))) {
+            fprintf(stderr, "inode_lock: error locking\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
 }
@@ -37,7 +44,10 @@ void inode_unlock(int inumber) {
         exit(EXIT_FAILURE);
     } 
     
-    pthread_rwlock_unlock(&(inode_table[inumber].lock));
+    if (pthread_rwlock_unlock(&(inode_table[inumber].lock))) {
+        fprintf(stderr, "inode_unlock: error unlocking\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /*
