@@ -24,7 +24,7 @@ pthread_cond_t empty, fill;
 
 struct timeval begin, end;
 
-/* ========================================================= */
+/* ================================================================= */
 
 void insertCommand(char* data) {
     strcpy(inputCommands[insertIndex], data);
@@ -114,6 +114,7 @@ void processInput(FILE *inputfile){
                 break;
             
             default: { /* error */
+                printf("line: %s", line);
                 errorParse();
             }
         }
