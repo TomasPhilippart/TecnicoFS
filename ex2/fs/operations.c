@@ -354,9 +354,10 @@ int move(char *path, char *newPath) {
 	return SUCCESS;
 }
 
-int isLocked(int inumber, int *inodes_visited) {
+int isLocked(int inumber, int *inodes_visited, int num_inodes_visited) {
 	int i;
-    for (i = 0; i < sizeof(*inodes_visited) / sizeof(inodes_visited[0]); i++) {
+    for (i = 0; i < num_inodes_visited; i++) {
+		printf("inode_visited: %i\n", inodes_visited[i]);
         if(inodes_visited[i] == inumber)
             return 1;
     }
@@ -389,27 +390,25 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 	char *path = strtok_r(full_path, delim, &saveptr); 
 
 	/* CHECK IF CURRENT_INUMBER IS ALREADY LOCKED */
-	if (!isLocked(current_inumber, inodes_visited)) {
+	if (!isLocked(current_inumber, inodes_visited, *num_inodes_visited)) {
 		/* WRITELOCK FS_ROOT IF PARENT, READLOCK OTHERWISE*/
 		if (path == NULL && mode == WRITE) { 
 			inode_lock(current_inumber, WRITE); /* writelock parent node */
 		} else {
 			inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
 		}
+
+		inodes_visited[(*num_inodes_visited)++] = current_inumber;
 	}
 	
-
-	inodes_visited[(*num_inodes_visited)++] = current_inumber;
-
 	/* search for all sub nodes */
 	while (path != NULL && (current_inumber = lookup_sub_node(path, data.dirEntries)) != FAIL) {
-		
 		
 		inode_get(current_inumber, &nType, &data);
 		path = strtok_r(NULL, delim, &saveptr);
 
 		/* CHECK IF CURRENT_INUMBER IS ALREADY LOCKED */
-		if (!isLocked(current_inumber, inodes_visited)) {
+		if (!isLocked(current_inumber, inodes_visited, *num_inodes_visited)) {
 			if (path == NULL && mode == WRITE) { 
 				inode_lock(current_inumber, WRITE); /* writelock parent node */
 			} else {
