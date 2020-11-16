@@ -323,7 +323,6 @@ int move(char *path, char *newPath) {
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
 	if (child_inumber == FAIL) {
-		fprintf(stderr, "failed to lookup subnode\n");
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
