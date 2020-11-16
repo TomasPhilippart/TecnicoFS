@@ -247,6 +247,9 @@ int main(int argc, char* argv[]) {
 
     /* release allocated memory */
     destroy_fs();
+    pthread_mutex_destroy(&commandsLock);
+    pthread_cond_destroy(&empty);
+    pthread_cond_destroy(&fill);
 
     printf ("TecnicoFS completed in %.4f seconds.\n",
          (double) (end.tv_usec - begin.tv_usec) / 1000000 +

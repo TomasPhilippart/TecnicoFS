@@ -24,13 +24,13 @@ void inode_lock(int inumber, int mode) {
     } 
 
     if (mode) {
-        if(pthread_rwlock_rdlock(&(inode_table[inumber].lock))) {
+        if ((pthread_rwlock_rdlock(&(inode_table[inumber].lock)))) {
             fprintf(stderr, "inode_lock: error locking\n");
             exit(EXIT_FAILURE);
         }
 
     } else {
-        if(pthread_rwlock_wrlock(&(inode_table[inumber].lock))) {
+        if ((pthread_rwlock_wrlock(&(inode_table[inumber].lock)))) {
             fprintf(stderr, "inode_lock: error locking\n");
             exit(EXIT_FAILURE);
         }

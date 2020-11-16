@@ -268,6 +268,17 @@ int delete(char *name){
 	return SUCCESS;
 }
 
+/* Auxiliary function to count the occurences of a given char in a string */
+int numberOfOccurrences(char *str, char toSearch) {
+	int i = 0, count = 0;
+	while(str[i] != '\0') {
+        if(str[i] == toSearch) {
+            count++;
+        }
+        i++;
+    }
+	return count;
+}
 /*
  * Moves a file/directory from path to newPath.
  * Input:
@@ -290,8 +301,12 @@ int move(char *path, char *newPath) {
 	split_parent_child_from_path(name_copy, &parent_name, &child_name);
 	split_parent_child_from_path(newName_copy, &newParent_name, &newChild_name);
 
-	parent_inumber = lookup(parent_name, inodes_visited, &num_inodes_visited, WRITE);
-	newParent_inumber = lookup(newParent_name, inodes_visited, &num_inodes_visited, WRITE);
+	// lookup the smaller path first 
+	if (numberOfOccurrences(name_copy, '\\') < numberOfOccurrences(newName_copy, '\\')) {
+		parent_inumber = lookup(parent_name, inodes_visited, &num_inodes_visited, WRITE);
+	} else {
+		newParent_inumber = lookup(newParent_name, inodes_visited, &num_inodes_visited, WRITE);
+	}
 
 	if (parent_inumber == FAIL) {
 		fprintf(stderr, "Move: path %s does not exist\n", path);
@@ -338,6 +353,15 @@ int move(char *path, char *newPath) {
 	unlock_inodes(inodes_visited, num_inodes_visited);
 	return SUCCESS;
 }
+
+int isLocked(int inumber, int *inodes_visited) {
+	int i;
+    for (i = 0; i < sizeof(*inodes_visited) / sizeof(inodes_visited[0]); i++) {
+        if(inodes_visited[i] == inumber)
+            return 1;
+    }
+    return 0;
+}
 /*
  * Lookup for a given path.
  * Input:
@@ -364,21 +388,9 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 	inode_get(current_inumber, &nType, &data);
 	char *path = strtok_r(full_path, delim, &saveptr); 
 
-	/* WRITELOCK FS_ROOT IF PARENT, READLOCK OTHERWISE*/
-	if (path == NULL && mode == WRITE) { 
-		inode_lock(current_inumber, WRITE); /* writelock parent node */
-	} else {
-		inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
-	}
-
-	inodes_visited[(*num_inodes_visited)++] = current_inumber;
-
-	/* search for all sub nodes */
-	while (path != NULL && (current_inumber = lookup_sub_node(path, data.dirEntries)) != FAIL) {
- 		inodes_visited[(*num_inodes_visited)++] = current_inumber;
-		
-		inode_get(current_inumber, &nType, &data);
-		path = strtok_r(NULL, delim, &saveptr);
+	/* CHECK IF CURRENT_INUMBER IS ALREADY LOCKED */
+	if (!isLocked(current_inumber, inodes_visited)) {
+		/* WRITELOCK FS_ROOT IF PARENT, READLOCK OTHERWISE*/
 		if (path == NULL && mode == WRITE) { 
 			inode_lock(current_inumber, WRITE); /* writelock parent node */
 		} else {
@@ -386,6 +398,27 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
 		}
 	}
 	
+
+	inodes_visited[(*num_inodes_visited)++] = current_inumber;
+
+	/* search for all sub nodes */
+	while (path != NULL && (current_inumber = lookup_sub_node(path, data.dirEntries)) != FAIL) {
+		
+		
+		inode_get(current_inumber, &nType, &data);
+		path = strtok_r(NULL, delim, &saveptr);
+
+		/* CHECK IF CURRENT_INUMBER IS ALREADY LOCKED */
+		if (!isLocked(current_inumber, inodes_visited)) {
+			if (path == NULL && mode == WRITE) { 
+				inode_lock(current_inumber, WRITE); /* writelock parent node */
+			} else {
+				inode_lock(current_inumber, READ); /* readlock every sub node, including the one we are looking for */
+			}
+
+			inodes_visited[(*num_inodes_visited)++] = current_inumber;
+		}
+	}
 	return current_inumber;
 }
 
