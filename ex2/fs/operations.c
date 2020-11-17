@@ -229,7 +229,6 @@ int delete(char *name){
 	}
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
-	
 	if (child_inumber == FAIL) {
 		printf("could not delete %s, does not exist in dir %s\n",
 		       name, parent_name);
@@ -351,13 +350,13 @@ int move(char *path, char *newPath) {
 }
 
 int isLocked(int inumber, int *inodes_visited, int num_inodes_visited) {
-	int i;
-    for (i = 0; i < num_inodes_visited; i++) {
+    for (int i = 0; i < num_inodes_visited; i++) {
         if (inodes_visited[i] == inumber)
         	return 1;
     }
     return 0;
 }
+
 /*
  * Lookup for a given path.
  * Input:

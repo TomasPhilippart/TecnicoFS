@@ -47,6 +47,7 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
+/* auxiliary function that wraps and protects the insertCommand function*/
 void insertProtectedCommand(char *line) {
     pthread_mutex_lock(&commandsLock);
     while (numberCommands == MAX_COMMANDS) {
@@ -82,28 +83,28 @@ void processInput(FILE *inputfile){
         }
 
         switch (token) {
-            case 'c':
+            case 'c': /* CREATE */
                 if(numTokens != 3) 
                     errorParse();
 
                 insertProtectedCommand(line);
                 break;
     
-            case 'l':
+            case 'l': /* LOOKUP */
                 if(numTokens != 2)
                     errorParse();
 
                 insertProtectedCommand(line);
                 break;
 
-            case 'd':
+            case 'd': /* DELETE */
                 if(numTokens != 2)
                     errorParse();
 
                 insertProtectedCommand(line);
                 break;
 
-            case 'm':
+            case 'm': /* MOVE */
                 if (numTokens != 3) 
                     errorParse();
                 
@@ -208,13 +209,32 @@ void *applyCommands() {
     return NULL;
 }
 
+/* prints the program's usage */
+void usage() {
+    fprintf(stderr, "Usage: /tecnicofs <inputFile> <outputFile> <numberOfThreads>\n");
+}
 
 int main(int argc, char* argv[]) {
+
+    /* Check arguments */
+    if (argc != 4) {
+        usage();
+        exit(EXIT_FAILURE);
+    }
+
     /* store possible arguments: inpufile outputfile numthreads */
     FILE *inputfile = fopen(argv[1], "r");
     FILE *outputfile = fopen(argv[2], "w+");
     numberThreads = atoi(argv[3]);
-    
+
+    /* check numberOfThreads argument */
+    if (!(isdigit(numberThreads) || numberThreads > 0)) {
+        fprintf(stderr, "Error: numberOfThreads must be a positive integer.\n");
+        usage();
+        exit(EXIT_FAILURE);
+
+    }
+
     if (!inputfile) { /* check for successful file opening */
         perror("Error");
         exit(EXIT_FAILURE);
