@@ -281,8 +281,8 @@ int move(char *path, char *newPath) {
 	char *parent_name, *newParent_name, *child_name, *newChild_name, name_copy[MAX_FILE_NAME], newName_copy[MAX_FILE_NAME];
 	int num_inodes_visited = 0;
 
-	type pType, cType;
-	union Data pdata, cdata, pnewData;
+	type pType, pnewType;
+	union Data pdata, pnewData;
 
 	strcpy(name_copy, path);
 	strcpy(newName_copy, newPath);
@@ -312,8 +312,16 @@ int move(char *path, char *newPath) {
 	}
 
 	inode_get(parent_inumber, &pType, &pdata);
-	inode_get(newParent_inumber,&pType,&pnewData);
+	inode_get(newParent_inumber,&pnewType,&pnewData);
 
+	/* check newPath is a directory */
+	if (pnewType != T_DIRECTORY) {
+		fprintf(stderr, "Move: %s is not a directory\n", newPath);
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	/* check child doesnt already exist in newPath*/
 	if (lookup_sub_node(child_name, pnewData.dirEntries) != FAIL) {
 		fprintf(stderr, "Move: %s already exists in %s\n", child_name, newParent_name);
 		unlock_inodes(inodes_visited, num_inodes_visited);
@@ -322,13 +330,6 @@ int move(char *path, char *newPath) {
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
 	if (child_inumber == FAIL) {
-		unlock_inodes(inodes_visited, num_inodes_visited);
-		return FAIL;
-	}
-	inode_get(child_inumber, &cType, &cdata);
-
-	if (cType == T_DIRECTORY && is_dir_empty(cdata.dirEntries) == FAIL) {
-		fprintf(stderr, "Move: %s is a directory and not empty\n", path);
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
