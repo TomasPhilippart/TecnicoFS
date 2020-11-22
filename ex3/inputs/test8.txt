@@ -1,0 +1,406 @@
+# Criação de ficheiros base
+c /d1 d
+c /d2 d
+c /d1 d
+c /d2 d
+c /d1 d
+c /d2 d
+c /d1 d
+c /d2 d
+# (assegurar que estão lá)
+l /
+l /
+l /
+l /d1
+l /d2
+l /
+l /
+l /
+# (2o nível de ficheiros)
+c /d1/a f
+c /d1/b f
+c /d1/c f
+c /d1/d f
+c /d1/e f
+c /d1/f f
+c /d1/g f
+c /d1/h f
+c /d2/z f
+c /d2/y f
+c /d2/x f
+c /d2/w f
+c /d2/v f
+c /d2/u f
+c /d2/t f
+c /d2/s f
+# (assegurar outra vez)
+l /
+l /
+l /
+l /
+l /
+l /
+l /
+l /
+l /
+# (mover)
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
+m /d1/a /d2/a
+m /d1/b /d2/b
+m /d1/c /d2/c
+m /d1/d /d2/d
+m /d1/e /d2/e
+m /d1/f /d2/f
+m /d1/g /d2/g
+m /d1/h /d2/h
+m /d2/z /d1/z
+m /d2/y /d1/y
+m /d2/x /d1/x
+m /d2/w /d1/w
+m /d2/v /d1/v
+m /d2/u /d1/u
+m /d2/t /d1/t
+m /d2/s /d1/s
+l /
+l /
+m /d2/a /d1/a
+m /d2/b /d1/b
+m /d2/c /d1/c
+m /d2/d /d1/d
+m /d2/e /d1/e
+m /d2/f /d1/f
+m /d2/g /d1/g
+m /d2/h /d1/h
+m /d1/z /d2/z
+m /d1/y /d2/y
+m /d1/x /d2/x
+m /d1/w /d2/w
+m /d1/v /d2/v
+m /d1/u /d2/u
+m /d1/t /d2/t
+m /d1/s /d2/s
+l /
+l /
