@@ -6,6 +6,9 @@
 #include <sys/un.h>
 #include <stdio.h>
 
+#define SUCCESS 0
+#define FAIL 1
+
 char socketName[MAX_FILE_NAME];
 char *serverSocket;
 int sockfd;
@@ -24,12 +27,12 @@ int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 }
 
 int tfsCreate(char *filename, char nodeType) {
-	char message[] = "Hello world"; 
+	char message[MAX_FILE_NAME]; //REVIW size
+	sprintf(message, "c %s %c", filename, nodeType);
 	if (sendto(sockfd, message, strlen(message)+1, 0, (struct sockaddr *) &serv_addr, servlen) < 0) {
 		perror("client: sendto error");
 		exit(EXIT_FAILURE);
 	} 
-
 
 	char buffer[1024];
 	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, 0, 0) < 0) {

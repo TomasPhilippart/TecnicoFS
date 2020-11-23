@@ -22,13 +22,9 @@
 
 /* Global variables */
 int numberThreads = 0;
-int numberCommands = 0;
-int headQueue = 0;
-int insertIndex = 0;
-char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
-
-pthread_mutex_t commandsLock;
-pthread_cond_t empty, fill;
+int sockfd;
+struct sockaddr_un server_addr;
+socklen_t addrlen;
 
 struct timeval begin, end;
 
@@ -51,22 +47,107 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-
 /* prints the program's usage */
 void usage() {
     fprintf(stderr, "Usage: /tecnicofs <numberOfThreads> <socketName>\n");
 }
 
-void *handleRequests() {
-    //COLOCAR WHILE AQUI
+void *applyCommands() {
+    struct sockaddr_un client_addr;
+    char in_buffer[INDIM], out_buffer[OUTDIM];
+    int c;
+
+    while (1) {
+		addrlen = sizeof(struct sockaddr_un);
+		c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0, (struct sockaddr *)&client_addr, &addrlen);
+		if (c <= 0) continue;
+		//Preventivo, caso o cliente nao tenha terminado a mensagem em '\0', 
+		in_buffer[c]='\0';
+		
+		//printf("Recebeu %s de %s\n", in_buffer, client_addr.sun_path);
+
+        /* ACKNOWLEDGE 
+		c = sprintf(out_buffer, "Mensagem %s recebida\n", in_buffer);
+		sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
+        */
+
+        const char* command = in_buffer;
+
+        char token, type;
+        char name[MAX_INPUT_SIZE], secondArgument[MAX_INPUT_SIZE];
+
+        int numTokens = sscanf(command, "%c %s %s", &token, name, secondArgument);
+        type = (char) secondArgument[0];
+
+        if (numTokens < 2) {
+            fprintf(stderr, "Error: invalid command in Queue\n");
+            exit(EXIT_FAILURE);
+        }
+
+        int searchResult;
+        int status;
+        switch (token) {
+            case 'c': /* CREATE */
+                switch (type) {
+                    case 'f':
+                        printf("Create file: %s\n", name);
+                        status = create(name, T_FILE); 
+                        c =sprintf(out_buffer, "%d", status);
+                        sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
+                        break;
+                    case 'd':
+                        printf("Create directory: %s\n", name);
+                        status = create(name, T_DIRECTORY);
+
+                        printf(out_buffer, "%d", status);
+                        sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
+                        break;
+                    default:
+                        fprintf(stderr, "Error: invalid node type\n");
+                        exit(EXIT_FAILURE);
+                }
+                break;
+
+            case 'l': /* LOOKUP */
+                {  
+                int inodes_visited[INODE_TABLE_SIZE];
+	            int num_inodes_visited = 0;
+                
+                searchResult = lookup(name, inodes_visited, &num_inodes_visited, READ);
+                unlock_inodes(inodes_visited, num_inodes_visited);
+
+                if (searchResult >= 0)
+                    printf("Search: %s found\n", name);
+                else
+                    printf("Search: %s not found\n", name);
+                break;
+                }
+
+            case 'd': /* DELETE */
+                printf("Delete: %s\n", name);
+                delete(name);
+                break;
+            
+            case 'm': /* MOVE */
+                printf("Move: %s %s\n", name, secondArgument);
+                move(name, secondArgument);
+                break;
+
+            case 's': /* SHUTDOWN */
+                return NULL;
+
+            default: { /* error */
+                fprintf(stderr, "Error: command to apply\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
     return NULL;
 }
 
+
 int main(int argc, char* argv[]) {
-    int sockfd;
-    struct sockaddr_un server_addr;
-    socklen_t addrlen;
-    char *socketName = "socketFS"; 
+    char *socketName;
 
     /* Check arguments */
     if (argc != 3) {
@@ -97,26 +178,6 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-    // TODO: Colocar em funcao handleRequests
-    while (1) {
-		struct sockaddr_un client_addr;
-		char in_buffer[INDIM], out_buffer[OUTDIM];
-		int c;
-
-		addrlen = sizeof(struct sockaddr_un);
-		c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0, (struct sockaddr *)&client_addr, &addrlen);
-		if (c <= 0) continue;
-		//Preventivo, caso o cliente nao tenha terminado a mensagem em '\0', 
-		in_buffer[c]='\0';
-		
-		printf("Recebeu %s de %s\n", in_buffer, client_addr.sun_path);
-
-		c = sprintf(out_buffer, "Mensagem %s recebida\n", in_buffer);
-		
-		sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
-	}
-    close(sockfd);
-
 
     /* init filesystem */
     init_fs();    
@@ -124,7 +185,7 @@ int main(int argc, char* argv[]) {
     pthread_t tid[numberThreads];
     /* create and assign thread pool to handleRequests */
     for (int i = 0; i < numberThreads; i++) {
-        if (pthread_create(&tid[i], NULL, handleRequests, NULL) !=0) {
+        if (pthread_create(&tid[i], NULL, applyCommands, NULL) !=0) {
             exit(EXIT_FAILURE);
         } 
     }
@@ -134,6 +195,8 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);
     }
+
+    close(sockfd);
 
     gettimeofday(&end, NULL);
 
