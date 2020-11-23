@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../tecnicofs-api-constants.h"
+#include "../../tecnicofs-api-constants.h"
 
 /* FS root inode number */
 #define FS_ROOT 0

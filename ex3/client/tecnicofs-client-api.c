@@ -6,13 +6,13 @@
 #include <sys/un.h>
 #include <stdio.h>
 
+char socketName[MAX_FILE_NAME];
 char *serverSocket;
 int sockfd;
 socklen_t servlen, clilen;
 struct sockaddr_un serv_addr, client_addr;
 
 int setSockAddrUn(char *path, struct sockaddr_un *addr) {
-
   if (addr == NULL)
     return 0;
 
@@ -24,11 +24,20 @@ int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 }
 
 int tfsCreate(char *filename, char nodeType) {
-	servlen = setSockAddrUn(serverSocket, &serv_addr);
-	if (sendto(sockfd, "Hello world", strlen("Hello world")+1, 0, (struct sockaddr *) &serv_addr, servlen) < 0) {
+	char message[] = "Hello world"; 
+	if (sendto(sockfd, message, strlen(message)+1, 0, (struct sockaddr *) &serv_addr, servlen) < 0) {
 		perror("client: sendto error");
 		exit(EXIT_FAILURE);
 	} 
+
+
+	char buffer[1024];
+	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, 0, 0) < 0) {
+		perror("client: recvfrom error");
+		exit(EXIT_FAILURE);
+	} 
+
+	printf("Recebeu resposta do servidor: %s\n", buffer);
 
 	return 0;
 }
@@ -46,7 +55,7 @@ int tfsLookup(char *path) {
 }
 
 int tfsMount(char * sockPath) {
-    char *socketName = "clientSocketFS"; 
+	sprintf(socketName, "/tmp/clientSocketFS_%d", getpid());
 	serverSocket = sockPath; // save the server socket name in a global variable (3aii)
 
 	if ((sockfd = socket(AF_UNIX, SOCK_DGRAM, 0) ) < 0) {
@@ -54,7 +63,9 @@ int tfsMount(char * sockPath) {
     	exit(EXIT_FAILURE);
   	}
 
-  	clilen = setSockAddrUn (socketName, &client_addr);
+  	clilen = setSockAddrUn(socketName, &client_addr);
+	servlen = setSockAddrUn(serverSocket, &serv_addr);
+	unlink(socketName);
   	if (bind(sockfd, (struct sockaddr *) &client_addr, clilen) < 0) {
 		perror("client: bind error");
     	exit(EXIT_FAILURE);
@@ -64,5 +75,6 @@ int tfsMount(char * sockPath) {
 }
 
 int tfsUnmount() {
+	unlink(socketName);
 	return -1;
 }
