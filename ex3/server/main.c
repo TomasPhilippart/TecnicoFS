@@ -19,6 +19,7 @@
 
 #define INDIM 30
 #define OUTDIM 512
+#define READ 1
 
 /* Global variables */
 int numberThreads = 0;
@@ -92,14 +93,15 @@ void *applyCommands() {
                     case 'f':
                         printf("Create file: %s\n", name);
                         status = create(name, T_FILE); 
-                        c =sprintf(out_buffer, "%d", status);
+
+                        c = sprintf(out_buffer, "%d", status);
                         sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                         break;
                     case 'd':
                         printf("Create directory: %s\n", name);
                         status = create(name, T_DIRECTORY);
 
-                        printf(out_buffer, "%d", status);
+                        c = sprintf(out_buffer, "%d", status);
                         sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                         break;
                     default:
@@ -116,25 +118,32 @@ void *applyCommands() {
                 searchResult = lookup(name, inodes_visited, &num_inodes_visited, READ);
                 unlock_inodes(inodes_visited, num_inodes_visited);
 
-                if (searchResult >= 0)
+                if (searchResult >= 0) {
                     printf("Search: %s found\n", name);
-                else
+                } else {
                     printf("Search: %s not found\n", name);
+                }
+                    
+                c = sprintf(out_buffer, "%d", searchResult);
+                sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                 break;
                 }
 
             case 'd': /* DELETE */
                 printf("Delete: %s\n", name);
-                delete(name);
+                status = delete(name);
+
+                c = sprintf(out_buffer, "%d", status);
+                sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                 break;
             
             case 'm': /* MOVE */
                 printf("Move: %s %s\n", name, secondArgument);
-                move(name, secondArgument);
-                break;
+                status = move(name, secondArgument);
 
-            case 's': /* SHUTDOWN */
-                return NULL;
+                c = sprintf(out_buffer, "%d", status);
+                sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
+                break;
 
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");

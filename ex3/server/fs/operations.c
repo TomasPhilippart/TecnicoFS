@@ -40,7 +40,6 @@ void split_parent_child_from_path(char * path, char ** parent, char ** child) {
 	path[last_slash_location] = '\0';
 	*parent = path;
 	*child = path + last_slash_location + 1;
-
 }
 
 

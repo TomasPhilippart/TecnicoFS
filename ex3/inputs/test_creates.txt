@@ -1,6 +1,15 @@
 c /a d
+l /a
 c /a/b d
 c /a/b/c d
 c /a/b/f f
 c /a/b/c/d d
 c /a/b/c/d/e d
+l /a/b/c/d/e
+d /a/b/f
+l /a/b/f
+c /a/b/movereste f
+m /a/b/movereste /a/b/c/d
+l /a/b/c/d/movereste
+l /a/b/c/d/estefalha
+l /a/b/movereste
