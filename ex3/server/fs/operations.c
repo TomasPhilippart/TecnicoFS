@@ -297,7 +297,6 @@ int move(char *path, char *newPath) {
 		parent_inumber = lookup(parent_name, inodes_visited, &num_inodes_visited, WRITE);
 	}
 
-
 	if (parent_inumber == FAIL) {
 		fprintf(stderr, "Move: path %s does not exist\n", path);
 		unlock_inodes(inodes_visited, num_inodes_visited);
@@ -311,7 +310,7 @@ int move(char *path, char *newPath) {
 	}
 
 	inode_get(parent_inumber, &pType, &pdata);
-	inode_get(newParent_inumber,&pnewType,&pnewData);
+	inode_get(newParent_inumber,&pnewType, &pnewData);
 
 	/* check newPath is a directory */
 	if (pnewType != T_DIRECTORY) {
@@ -329,6 +328,11 @@ int move(char *path, char *newPath) {
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
 	if (child_inumber == FAIL) {
+		unlock_inodes(inodes_visited, num_inodes_visited);
+		return FAIL;
+	}
+
+	if (newParent_inumber == child_inumber) {
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}

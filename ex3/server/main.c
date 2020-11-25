@@ -55,7 +55,7 @@ void usage() {
 
 void *applyCommands() {
     struct sockaddr_un client_addr;
-    char in_buffer[INDIM], out_buffer[OUTDIM];
+    char in_buffer[INDIM];;
     int c;
 
     while (1) {
@@ -64,13 +64,6 @@ void *applyCommands() {
 		if (c <= 0) continue;
 		//Preventivo, caso o cliente nao tenha terminado a mensagem em '\0', 
 		in_buffer[c]='\0';
-		
-		//printf("Recebeu %s de %s\n", in_buffer, client_addr.sun_path);
-
-        /* ACKNOWLEDGE 
-		c = sprintf(out_buffer, "Mensagem %s recebida\n", in_buffer);
-		sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
-        */
 
         const char* command = in_buffer;
 
@@ -85,7 +78,6 @@ void *applyCommands() {
             exit(EXIT_FAILURE);
         }
 
-        int searchResult;
         int status;
         switch (token) {
             case 'c': /* CREATE */
@@ -93,16 +85,11 @@ void *applyCommands() {
                     case 'f':
                         printf("Create file: %s\n", name);
                         status = create(name, T_FILE); 
-
-                        c = sprintf(out_buffer, "%d", status);
-                        sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
+                        
                         break;
                     case 'd':
                         printf("Create directory: %s\n", name);
                         status = create(name, T_DIRECTORY);
-
-                        c = sprintf(out_buffer, "%d", status);
-                        sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                         break;
                     default:
                         fprintf(stderr, "Error: invalid node type\n");
@@ -115,41 +102,37 @@ void *applyCommands() {
                 int inodes_visited[INODE_TABLE_SIZE];
 	            int num_inodes_visited = 0;
                 
-                searchResult = lookup(name, inodes_visited, &num_inodes_visited, READ);
+                status = lookup(name, inodes_visited, &num_inodes_visited, READ);
                 unlock_inodes(inodes_visited, num_inodes_visited);
 
-                if (searchResult >= 0) {
+                if (status >= 0) {
                     printf("Search: %s found\n", name);
                 } else {
                     printf("Search: %s not found\n", name);
                 }
-                    
-                c = sprintf(out_buffer, "%d", searchResult);
-                sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
+
                 break;
                 }
 
             case 'd': /* DELETE */
                 printf("Delete: %s\n", name);
                 status = delete(name);
-
-                c = sprintf(out_buffer, "%d", status);
-                sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                 break;
             
             case 'm': /* MOVE */
                 printf("Move: %s %s\n", name, secondArgument);
                 status = move(name, secondArgument);
-
-                c = sprintf(out_buffer, "%d", status);
-                sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
                 break;
 
+            case 'p': /* PRINT */
+                // TODO
+                break;
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
             }
         }
+    sendto(sockfd, &status, sizeof(status), 0, (struct sockaddr *)&client_addr, addrlen);
     }
     return NULL;
 }
