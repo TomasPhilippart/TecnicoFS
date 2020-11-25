@@ -107,9 +107,9 @@ void *processInput() {
 			case 'p':
 				if (numTokens != 2)
 					errorParse();
-				res = tfsPrint(arg2);
+				res = tfsPrint(arg1);
 				if (!res)
-					printf("Printed tree to file %s\n", arg2);
+					printf("Printed tree to file %s\n", arg1);
 				else
 					printf("Unable to print tree\n");
 			case '#':

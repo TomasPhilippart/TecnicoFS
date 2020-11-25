@@ -27,8 +27,19 @@ int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 }
 
 int tfsPrint(char *outputfile) {
-	// TODO
-	return -1;
+	char message[MAX_INPUT_SIZE];
+	sprintf(message, "p %s", outputfile);
+	if (sendto(sockfd, message, strlen(message)+1, 0, (struct sockaddr *) &serv_addr, servlen) < 0) {
+		perror("client: sendto error");
+		exit(EXIT_FAILURE);
+	}
+
+	int res;
+	if (recvfrom(sockfd, &res, sizeof(res), 0, 0, 0) < 0) {
+		perror("client: recvfrom error");
+		exit(EXIT_FAILURE);
+	} 
+	return res;
 }
 
 int tfsCreate(char *filename, char nodeType) {

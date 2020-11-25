@@ -10,6 +10,6 @@ int create(char *name, type nodeType);
 int delete(char *name);
 int move(char *path, char *newPath);
 int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode);
-void print_tecnicofs_tree(FILE *fp);
+int print_tecnicofs_tree(char *path);
 
 #endif /* FS_H */

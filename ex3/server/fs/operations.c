@@ -115,6 +115,15 @@ void unlock_inodes(int *inodes_visited, int num_inodes_visited) {
 	}
 }
 
+
+int isLocked(int inumber, int *inodes_visited, int num_inodes_visited) {
+    for (int i = 0; i < num_inodes_visited; i++) {
+        if (inodes_visited[i] == inumber)
+        	return 1;
+    }
+    return 0;
+}
+
 /*
  * Creates a new node given a path.
  * Input:
@@ -332,7 +341,8 @@ int move(char *path, char *newPath) {
 		return FAIL;
 	}
 
-	if (newParent_inumber == child_inumber) {
+	// check if child_inumber is locked
+	if (isLocked(child_inumber, inodes_visited, num_inodes_visited)) {
 		unlock_inodes(inodes_visited, num_inodes_visited);
 		return FAIL;
 	}
@@ -351,14 +361,6 @@ int move(char *path, char *newPath) {
 
 	unlock_inodes(inodes_visited, num_inodes_visited);
 	return SUCCESS;
-}
-
-int isLocked(int inumber, int *inodes_visited, int num_inodes_visited) {
-    for (int i = 0; i < num_inodes_visited; i++) {
-        if (inodes_visited[i] == inumber)
-        	return 1;
-    }
-    return 0;
 }
 
 /*
@@ -427,6 +429,22 @@ int lookup(char *name, int *inodes_visited, int *num_inodes_visited, int mode) {
  * Input:
  *  - fp: pointer to output file
  */
-void print_tecnicofs_tree(FILE *fp){
+int print_tecnicofs_tree(char *path){
+	FILE *fp;
+	
+	if ((fp = fopen(path,"w")) == NULL) {
+		fprintf(stderr, "Error: file can't be created\n");
+		return FAIL;
+	}
+	inode_lock(FS_ROOT, WRITE);
+
 	inode_print_tree(fp, FS_ROOT, "");
+
+	inode_unlock(FS_ROOT);
+
+	if (fclose(fp) == FAIL) {
+		fprintf(stderr, "Error: file can't be closed\n");
+		return FAIL;
+	}
+	return SUCCESS;
 }

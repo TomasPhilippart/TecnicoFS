@@ -13,3 +13,5 @@ m /a/b/movereste /a/b/c/d
 l /a/b/c/d/movereste
 l /a/b/c/d/estefalha
 l /a/b/movereste
+m /a /a/a
+p output.txt

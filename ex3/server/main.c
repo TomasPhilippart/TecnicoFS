@@ -27,8 +27,6 @@ int sockfd;
 struct sockaddr_un server_addr;
 socklen_t addrlen;
 
-struct timeval begin, end;
-
 /* ================================================================= */
 
 int setSockAddrUn(char *path, struct sockaddr_un *addr) {
@@ -125,7 +123,8 @@ void *applyCommands() {
                 break;
 
             case 'p': /* PRINT */
-                // TODO
+                printf("Print tree\n");
+                status = print_tecnicofs_tree(name);
                 break;
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
@@ -182,24 +181,14 @@ int main(int argc, char* argv[]) {
         } 
     }
 
-    gettimeofday(&begin, NULL);
-
     for (int i = 0; i < numberThreads; i++) {
         pthread_join(tid[i], NULL);
     }
 
     close(sockfd);
 
-    gettimeofday(&end, NULL);
-
-    //print_tecnicofs_tree(outputfile);
-
     /* release allocated memory */
     destroy_fs();
-
-    printf ("TecnicoFS completed in %.4f seconds.\n",
-         (double) (end.tv_usec - begin.tv_usec) / 1000000 +
-         (double) (end.tv_sec - begin.tv_sec));
 
     exit(EXIT_SUCCESS);
 }
