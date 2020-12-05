@@ -3,8 +3,6 @@
 #include "tecnicofs-client-api.h"
 #include "../tecnicofs-api-constants.h"
 
-#define MAX_INPUT_SIZE 100 // FIXME: isto n devia estar aqui
-
 FILE* inputFile;
 char* serverName;
 
